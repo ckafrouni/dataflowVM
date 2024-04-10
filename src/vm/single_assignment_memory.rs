@@ -53,15 +53,15 @@ impl SingleAssignmentMemory {
     }
 }
 
-type Atom = String;
+pub type Atom = String;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Value {
     Unbound,
     Int(i32),
     Proc(Vec<Identifier>, Vec<VmInstruction>, Environment),
-    // Atom(Atom),
-    // Record(HashMap<Atom, Value>),
+    Atom(Atom),
+    Record(HashMap<Atom, Value>),
 }
 
 impl Value {

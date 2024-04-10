@@ -9,7 +9,7 @@ use std::collections::BinaryHeap;
 pub use environment::Environment;
 pub use identifier::Identifier;
 pub use semantics::{SemanticInstruction, SemanticStack};
-pub use single_assignment_memory::{SingleAssignmentMemory, Value};
+pub use single_assignment_memory::{SingleAssignmentMemory, Value, Atom};
 pub use variable::Variable;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -204,6 +204,10 @@ impl Vm {
                         println!("\x1b[0;32m{:?} <- {:?}\x1b[0m", identifier, value)
                     }
                     Value::Proc(_, _, _) => println!("\x1b[0;32m{:?} <- Proc\x1b[0m", identifier),
+                    Value::Atom(a) => println!("\x1b[0;32m{:?} <- Atom {:?}\x1b[0m", a, identifier),
+                    Value::Record(r) => {
+                        println!("\x1b[0;32m{:?} <- Record {:?}\x1b[0m", r, identifier)
+                    }
                 }
             }
             VmInstruction::ProcDef(identifier, parameters, free_variables, body) => {
