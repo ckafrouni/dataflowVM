@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::Variable;
+use super::{Environment, Identifier, Variable, VmInstruction};
 
 #[derive(Debug)]
 pub struct SingleAssignmentMemory(HashMap<Variable, Value>);
@@ -14,7 +14,7 @@ impl SingleAssignmentMemory {
         self.0.get(variable)
     }
 
-    pub fn allocate(&mut self, variable: Variable) {
+    pub fn allocate(&self, variable: Variable) -> SingleAssignmentMemory {
         // Only allow allocating unallocated variables
         if self.0.contains_key(&variable) {
             panic!(
@@ -22,17 +22,20 @@ impl SingleAssignmentMemory {
                 variable
             );
         }
-        self.0.insert(variable, Value::Unbound);
+        let mut new_memory = self.0.clone();
+        new_memory.insert(variable, Value::Unbound);
+        SingleAssignmentMemory(new_memory)
     }
 
-    pub fn bind(&mut self, variable: &Variable, value: Value) {
+    pub fn bind(&self, variable: &Variable, value: Value) -> SingleAssignmentMemory {
         // Only allow writing to unbound variables
         if let Some(existing_value) = self.0.get(variable) {
             if existing_value.is_bound() {
                 panic!("Attempted to write to bound variable {:?}", variable);
             }
-            // If the variable is in the memory and unbound, write to it
-            self.0.insert(variable.clone(), value);
+            let mut new_memory = self.0.clone();
+            new_memory.insert(variable.clone(), value);
+            SingleAssignmentMemory(new_memory)
         } else {
             // If the variable is not in the memory, panic
             panic!("Attempted to write to unallocated variable {:?}", variable);
@@ -50,10 +53,15 @@ impl SingleAssignmentMemory {
     }
 }
 
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+type Atom = String;
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Value {
     Unbound,
     Int(i32),
+    Proc(Vec<Identifier>, Vec<VmInstruction>, Environment),
+    // Atom(Atom),
+    // Record(HashMap<Atom, Value>),
 }
 
 impl Value {

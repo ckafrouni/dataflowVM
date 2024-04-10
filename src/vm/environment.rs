@@ -20,9 +20,14 @@ impl Environment {
         new_environment
     }
 
-    pub fn _restrict(&self, identifier: &Identifier) -> Environment {
-        let mut new_environment = self.clone();
-        new_environment.0.remove(identifier);
+    pub fn restrict(&self, identifiers: Vec<Identifier>) -> Environment {
+        let mut new_environment = Environment::new();
+        for identifier in identifiers {
+            if let Some(variable) = self.lookup(&identifier) {
+                new_environment = new_environment.adjoint(&identifier, variable.clone());
+            }
+        }
         new_environment
+        
     }
 }

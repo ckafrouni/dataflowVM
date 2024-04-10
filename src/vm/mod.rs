@@ -19,6 +19,13 @@ pub enum VmInstruction {
     Assign(Identifier, Value),
     AssignAdd(Identifier, Identifier, Identifier),
     Print(Identifier),
+    ProcDef(
+        Identifier,
+        Vec<Identifier>,
+        Vec<Identifier>,
+        Vec<VmInstruction>,
+    ),
+    ProcCall(Identifier, Vec<Identifier>),
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -142,13 +149,13 @@ impl Vm {
                 self.threads.push(Thread::new(0, new_semantic_stack));
             }
             VmInstruction::Local(identifiers, instructions) => {
-                // println!("\x1b[0;31mINSTRUCTION: Local\x1b[0m");
+                println!("\x1b[0;31mINSTRUCTION: Local\x1b[0m");
                 let new_environment =
                     identifiers
                         .iter()
                         .fold(environment.clone(), |acc, identifier| {
                             let variable = Variable::new();
-                            self.memory.allocate(variable.clone());
+                            self.memory = self.memory.allocate(variable.clone());
                             acc.adjoint(identifier, variable)
                         });
 
@@ -160,12 +167,12 @@ impl Vm {
                 };
             }
             VmInstruction::Assign(identifier, value) => {
-                // println!("\x1b[0;31mINSTRUCTION: Assign\x1b[0m");
+                println!("\x1b[0;31mINSTRUCTION: Assign\x1b[0m");
                 let variable = environment.lookup(&identifier).unwrap();
-                self.memory.bind(variable, value);
+                self.memory = self.memory.bind(variable, value);
             }
             VmInstruction::AssignAdd(identifier, lhs, rhs) => {
-                // println!("\x1b[0;31mINSTRUCTION: AssignAdd\x1b[0m");
+                println!("\x1b[0;31mINSTRUCTION: AssignAdd\x1b[0m");
                 let lhs_var = environment.lookup(&lhs).unwrap();
                 let rhs_var = environment.lookup(&rhs).unwrap();
                 let variable = environment.lookup(&identifier).unwrap();
@@ -185,10 +192,10 @@ impl Vm {
                     _ => panic!("Type error"),
                 };
 
-                self.memory.bind(variable, Value::Int(result));
+                self.memory = self.memory.bind(variable, Value::Int(result));
             }
             VmInstruction::Print(identifier) => {
-                // println!("\x1b[0;31mINSTRUCTION: Print\x1b[0m");
+                println!("\x1b[0;31mINSTRUCTION: Print\x1b[0m");
                 let variable = environment.lookup(&identifier).unwrap();
                 let value = self.memory.read(variable).unwrap();
                 match value {
@@ -196,7 +203,42 @@ impl Vm {
                     Value::Int(value) => {
                         println!("\x1b[0;32m{:?} <- {:?}\x1b[0m", identifier, value)
                     }
+                    Value::Proc(_, _, _) => println!("\x1b[0;32m{:?} <- Proc\x1b[0m", identifier),
                 }
+            }
+            VmInstruction::ProcDef(identifier, parameters, free_variables, body) => {
+                println!("\x1b[0;31mINSTRUCTION: ProcDef\x1b[0m");
+                let contextual_environment = environment.restrict(free_variables);
+                let proc = Value::Proc(parameters, body, contextual_environment);
+
+                let variable = environment.lookup(&identifier).unwrap();
+                self.memory = self.memory.bind(variable, proc);
+            }
+            VmInstruction::ProcCall(identifier, arguments) => {
+                println!("\x1b[0;31mINSTRUCTION: ProcCall\x1b[0m");
+                let proc_variable = environment.lookup(&identifier).unwrap();
+                let proc = self.memory.read(proc_variable).unwrap();
+
+                let (parameters, body, contextual_environment) = match proc {
+                    Value::Proc(parameters, body, environment) => (parameters, body, environment),
+                    _ => panic!("Type error"),
+                };
+
+                let new_environment = parameters.iter().zip(arguments.iter()).fold(
+                    contextual_environment.clone(),
+                    |acc, (parameter, argument)| {
+                        let variable = environment.lookup(argument).unwrap();
+                        acc.adjoint(parameter, variable.clone())
+                    },
+                );
+
+                let new_semantic_instruction =
+                    SemanticInstruction(body.clone(), new_environment.clone());
+                semantic_stack.push(new_semantic_instruction);
+                return ExecutionResult {
+                    state: ThreadState::Ready,
+                    semantic_stack: Some(semantic_stack),
+                };
             }
         }
         ExecutionResult {
