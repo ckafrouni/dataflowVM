@@ -1,5 +1,6 @@
-use crate::variable::Variable;
 use std::collections::HashMap;
+
+use super::Variable;
 
 #[derive(Debug)]
 pub struct SingleAssignmentMemory(HashMap<Variable, Value>);

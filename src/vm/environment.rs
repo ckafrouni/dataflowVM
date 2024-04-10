@@ -1,5 +1,5 @@
-use crate::identifier::Identifier;
-use crate::variable::Variable;
+use super::Identifier;
+use super::Variable;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
