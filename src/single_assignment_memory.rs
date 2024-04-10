@@ -39,9 +39,13 @@ impl SingleAssignmentMemory {
     }
 
     pub fn show_memory(&self) {
+        println!("|----------------|---------|");
+        println!("|    Variable    |  Value  |");
+        println!("|----------------|---------|");
         for (variable, value) in self.0.iter() {
-            println!("{:?} -> {:?}", variable, value);
+            println!("| {:?} | {:?} |", variable, value);
         }
+        println!("|----------------|---------|");
     }
 }
 

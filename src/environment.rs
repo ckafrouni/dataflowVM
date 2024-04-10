@@ -2,7 +2,7 @@ use crate::identifier::Identifier;
 use crate::variable::Variable;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Environment(HashMap<Identifier, Variable>);
 
 impl Environment {
